@@ -1,0 +1,68 @@
+! ****************************************************
+!   FRANK MANU
+!   SPRING 2020
+!	REF: DR. THOMPSON
+!   EECE.5200 - COMPUTER AIDED ENGINEERING ANAYLSIS
+!   PROBLEM SET 5 - PART 2
+! ****************************************************
+
+	IMPLICIT NONE
+	INTEGER, PARAMETER ::N=16
+	COMPLEX,DIMENSION(0:N-1):: U,U_DFT,V,V_DFT,W,UHAT,VHAT,WHAT
+	REAL,DIMENSION(0:N)::X
+
+	COMPLEX,DIMENSION(0:N-1)::C1,C2,WNEW
+	REAL::TPI,DX
+	INTEGER::I,K
+
+	TPI = 2*ACOS(-1.0)
+	DX = TPI/N
+
+	DO I=0,N-1
+	 	X(I)= I*DX
+	 	U(I)= COS(7*X(I))
+	 	V(I)= COS(7*X(I))
+	ENDDO
+	
+! DFT
+	U_DFT=U
+	V_DFT=V
+	CALL FFT (U_DFT,N,0)
+	CALL FFT (V_DFT,N,0)
+
+! ALIASING EXPERIMENT
+! PHASE FACTOR
+	DO K=0,N/2
+	 C1(K) = EXP( K*CMPLX(0.0,DX/2.0))
+	ENDDO
+	DO K=N/2+1,N-1
+	 C1(K) = EXP((N-K)*CMPLX(0.0,DX/2.0)*(-1))
+	ENDDO
+	C2= CONJG(C1)
+
+! UHAT,VHAT HALF STEP VERSION OF U, V
+	UHAT= U_DFT*C1
+	VHAT= V_DFT*C1
+	CALL FFT(UHAT,N,1)
+	CALL FFT(VHAT,N,1)
+
+	DO I=0,N-1
+	 W(I)   = U(I)*   V(I)
+	 WHAT(I)= UHAT(I)*VHAT(I)
+	ENDDO
+
+	CALL FFT(W,N,0)
+	CALL FFT(WHAT,N,0)
+	
+	DO K=0,N-1
+	 WNEW(K) = 0.5*(W(K) +C2(K)*WHAT(K))
+	ENDDO
+
+	CALL FFT(WNEW,N,1)
+
+	WRITE(*,*) '   X               UV                WNEW             ERROR'
+	DO I=0,N-1
+	 WRITE(*,*) X(I), REAL(U(I)*V(I)),REAL(WNEW(I)), REAL(U(I)*V(I)-WNEW(I))
+	ENDDO
+
+	END
